@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+function playlistHref(playlistId: string) {
+  if (playlistId.startsWith("custom:")) return `/playlist/${playlistId.slice(7)}`;
+  return `/playlist/${playlistId}`;
+}
+
 function rankLabel(rank: number | null) {
   if (rank === 1) return { label: "1st", color: "text-yellow-400" };
   if (rank === 2) return { label: "2nd", color: "text-gray-300" };
@@ -97,7 +102,12 @@ export default async function ProfilePage() {
                 return (
                   <li key={gp.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                     <div className="flex flex-col">
-                      <span className="font-medium text-sm">{gp.gameSession.playlistName}</span>
+                      <Link
+                        href={playlistHref(gp.gameSession.playlistId)}
+                        className="font-medium text-sm hover:text-yellow-400 transition"
+                      >
+                        {gp.gameSession.playlistName}
+                      </Link>
                       <span className="text-gray-500 text-xs">
                         {formatDate(gp.gameSession.startedAt)}
                       </span>
