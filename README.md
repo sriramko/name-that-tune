@@ -25,6 +25,7 @@ Name That Tune! is a real-time multiplayer web game where players race to identi
 - **Cross-device multiplayer** — friends join from any browser using the room code
 - **Real-time sync** — all game events (players joining, song starts, guesses, scores) broadcast live via Pusher WebSockets
 - **5 curated playlists** — 90s Hits, 2000s Pop, Classic Rock, Taylor Swift, Today's Hits
+- **Custom playlists** — signed-in users can build their own playlists by searching for any song; live iTunes fuzzy search shows results with album art as you type
 - **iTunes previews** — 30-second audio clips fetched automatically, no API key required
 - **Time-based scoring** — 10 points for an instant guess, dropping by 1 point every 3 seconds down to a minimum of 1; wrong guesses cost 1 point
 - **Artist bonus round** — after a correct title guess, the winner has 10 seconds to name the artist(s) for +1 bonus point
@@ -93,7 +94,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## How to Play
 
 1. Sign in with GitHub (optional — guests can join with just a nickname)
-2. Create a room and pick a playlist, or join with a friend's room code
+2. Create a room and pick a curated or custom playlist, or join with a friend's room code
 3. Host hits **Start Game**
 4. A 30-second song clip plays automatically — type the title and submit
 5. First correct title guess wins the round points (faster = more points)
@@ -106,5 +107,4 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Planned Features
 
 - Invite links (no manual code entry)
-- Custom user-created playlists
 - Spotify integration
