@@ -21,7 +21,7 @@ Name That Tune! is a real-time multiplayer web game where players race to identi
 ## Features
 
 - **Instant game rooms** — create a room and share the 4-letter code; no account required to join as a guest
-- **GitHub accounts** — sign in with GitHub to track your stats across sessions
+- **Flexible sign-in** — sign in with GitHub OAuth or via email magic link (no password needed)
 - **Cross-device multiplayer** — friends join from any browser using the room code
 - **Real-time sync** — all game events (players joining, song starts, guesses, scores) broadcast live via Pusher WebSockets
 - **5 curated playlists** — 90s Hits, 2000s Pop, Classic Rock, Taylor Swift, Today's Hits
@@ -45,6 +45,7 @@ Name That Tune! is a real-time multiplayer web game where players race to identi
 - Node.js 18+
 - A free [Pusher Channels](https://pusher.com/) account
 - A GitHub OAuth app (for account features)
+- A free [Resend](https://resend.com/) account (for email magic link sign-in)
 
 ### Setup
 
@@ -78,6 +79,11 @@ NEXTAUTH_SECRET=your_random_secret
 # GitHub OAuth (https://github.com/settings/developers)
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# Resend (https://resend.com/) — for email magic link sign-in
+RESEND_API_KEY=your_resend_api_key
+# Use "onboarding@resend.dev" for local testing, or "You <you@yourdomain.com>" in production
+EMAIL_FROM="Name That Tune <onboarding@resend.dev>"
 
 # Database
 DATABASE_URL="file:./dev.db"

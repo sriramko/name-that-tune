@@ -25,6 +25,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>([]);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
   // Load custom playlists when signed in and on create screen
   useEffect(() => {
@@ -33,6 +36,15 @@ export default function Home() {
       .then((r) => r.json())
       .then((data) => setCustomPlaylists(data.playlists ?? []));
   }, [session, mode]);
+
+  async function handleEmailSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+    setEmailLoading(true);
+    await signIn("email", { email: emailInput.trim(), redirect: false, callbackUrl: "/" });
+    setEmailLoading(false);
+    setEmailSent(true);
+  }
 
   async function handleCreate() {
     if (!session) return signIn("github");
@@ -140,17 +152,53 @@ export default function Home() {
         {mode === "create" && (
           <div className="flex flex-col gap-4">
             {!session ? (
-              <div className="bg-gray-900 rounded-xl p-6 text-center flex flex-col gap-4">
-                <p className="text-gray-300">Sign in to create a room</p>
-                <button
-                  onClick={() => signIn("github")}
-                  className="flex items-center justify-center gap-2 bg-white text-gray-950 font-bold py-3 rounded-xl hover:bg-gray-100 transition"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-                  </svg>
-                  Sign in with GitHub
-                </button>
+              <div className="bg-gray-900 rounded-xl p-6 flex flex-col gap-4">
+                <p className="text-gray-300 text-center">Sign in to create a room</p>
+
+                {emailSent ? (
+                  <div className="text-center flex flex-col gap-2 py-2">
+                    <p className="text-yellow-400 font-semibold">Check your email!</p>
+                    <p className="text-gray-400 text-sm">
+                      A sign-in link was sent to <span className="text-white">{emailInput}</span>.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => signIn("github")}
+                      className="flex items-center justify-center gap-2 bg-white text-gray-950 font-bold py-3 rounded-xl hover:bg-gray-100 transition"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                      </svg>
+                      Sign in with GitHub
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-gray-700" />
+                      <span className="text-gray-600 text-xs">or</span>
+                      <div className="flex-1 h-px bg-gray-700" />
+                    </div>
+
+                    <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2">
+                      <input
+                        type="email"
+                        placeholder="your@email.com"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        className="w-full bg-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={emailLoading}
+                        className="w-full bg-gray-700 text-white font-bold py-3 rounded-xl hover:bg-gray-600 transition disabled:opacity-50"
+                      >
+                        {emailLoading ? "Sending..." : "Send magic link"}
+                      </button>
+                    </form>
+                  </>
+                )}
               </div>
             ) : (
               <>
