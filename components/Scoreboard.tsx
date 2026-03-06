@@ -26,6 +26,13 @@ export default function Scoreboard({ players, currentPlayerId, showRank }: Props
               {showRank && (
                 <span className="text-gray-500 text-sm w-4">{i + 1}.</span>
               )}
+              {p.avatar ? (
+                <img src={p.avatar} alt={p.nickname} className="w-6 h-6 rounded-full" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-300">
+                  {p.nickname[0].toUpperCase()}
+                </div>
+              )}
               <span className="font-medium">
                 {p.nickname}
                 {p.id === currentPlayerId && (

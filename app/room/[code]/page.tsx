@@ -182,7 +182,13 @@ export default function RoomPage() {
               <ul className="flex flex-col gap-2">
                 {players.map((p) => (
                   <li key={p.id} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                    {p.avatar ? (
+                      <img src={p.avatar} alt={p.nickname} className="w-7 h-7 rounded-full" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300">
+                        {p.nickname[0].toUpperCase()}
+                      </div>
+                    )}
                     <span className="font-medium">{p.nickname}</span>
                     {p.id === playerId && (
                       <span className="text-xs text-gray-500">(you)</span>

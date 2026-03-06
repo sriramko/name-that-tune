@@ -7,7 +7,9 @@ export interface Track {
 
 export interface Player {
   id: string;
+  userId?: string;
   nickname: string;
+  avatar?: string;
   score: number;
 }
 
@@ -20,4 +22,5 @@ export interface Room {
   currentTrackIndex: number;
   phase: "lobby" | "playing" | "reveal" | "finished";
   roundWinner: string | null;
+  gameSessionId?: string;
 }
