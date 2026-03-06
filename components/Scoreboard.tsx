@@ -18,13 +18,21 @@ export default function Scoreboard({ players, currentPlayerId, showRank }: Props
         {sorted.map((p, i) => (
           <li
             key={p.id}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-              p.id === currentPlayerId ? "bg-yellow-400/10 border border-yellow-400/30" : "bg-gray-800"
+            className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-all ${
+              showRank && i === 0
+                ? "bg-yellow-400/10 border-yellow-400/50"
+                : p.id === currentPlayerId
+                ? "bg-yellow-400/10 border-yellow-400/30"
+                : "bg-gray-800 border-transparent"
             }`}
           >
             <div className="flex items-center gap-3">
               {showRank && (
-                <span className="text-gray-500 text-sm w-4">{i + 1}.</span>
+                <span className="text-lg w-6 text-center">
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (
+                    <span className="text-gray-500 text-sm">{i + 1}.</span>
+                  )}
+                </span>
               )}
               {p.avatar ? (
                 <img src={p.avatar} alt={p.nickname} className="w-6 h-6 rounded-full" />
