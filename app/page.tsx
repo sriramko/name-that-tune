@@ -1,65 +1,154 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { PLAYLISTS } from "@/lib/playlists";
 
 export default function Home() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"home" | "create" | "join">("home");
+  const [nickname, setNickname] = useState("");
+  const [playlistId, setPlaylistId] = useState(PLAYLISTS[0].id);
+  const [joinCode, setJoinCode] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleCreate() {
+    if (!nickname.trim()) return setError("Enter a nickname");
+    setLoading(true);
+    setError("");
+    const res = await fetch("/api/room/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: nickname.trim(), playlistId }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setLoading(false); return setError(data.error); }
+    sessionStorage.setItem("playerId", data.playerId);
+    sessionStorage.setItem("nickname", nickname.trim());
+    router.push(`/room/${data.code}`);
+  }
+
+  async function handleJoin() {
+    if (!nickname.trim()) return setError("Enter a nickname");
+    if (!joinCode.trim()) return setError("Enter a room code");
+    setLoading(true);
+    setError("");
+    const res = await fetch("/api/room/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: nickname.trim(), code: joinCode.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setLoading(false); return setError(data.error); }
+    sessionStorage.setItem("playerId", data.playerId);
+    sessionStorage.setItem("nickname", nickname.trim());
+    router.push(`/room/${data.code}`);
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <h1 className="text-5xl font-black text-center mb-2 text-yellow-400">
+          Name That Tune!
+        </h1>
+        <p className="text-center text-gray-400 mb-10 text-sm">
+          Hear it. Name it. Win it.
+        </p>
+
+        {mode === "home" && (
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setMode("create")}
+              className="w-full bg-yellow-400 text-gray-950 font-bold py-4 rounded-xl text-lg hover:bg-yellow-300 transition"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Create a Room
+            </button>
+            <button
+              onClick={() => setMode("join")}
+              className="w-full bg-gray-800 text-white font-bold py-4 rounded-xl text-lg hover:bg-gray-700 transition"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              Join a Room
+            </button>
+          </div>
+        )}
+
+        {mode === "create" && (
+          <div className="flex flex-col gap-4">
+            <input
+              className="w-full bg-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              placeholder="Your nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              maxLength={20}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-gray-400 text-sm">Choose a playlist</label>
+              {PLAYLISTS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPlaylistId(p.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition ${
+                    playlistId === p.id
+                      ? "border-yellow-400 bg-yellow-400/10 text-yellow-400"
+                      : "border-gray-700 bg-gray-800 text-white hover:border-gray-500"
+                  }`}
+                >
+                  <span className="font-semibold">{p.name}</span>
+                  <span className="text-gray-400 text-sm ml-2">— {p.description}</span>
+                </button>
+              ))}
+            </div>
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <button
+              onClick={handleCreate}
+              disabled={loading}
+              className="w-full bg-yellow-400 text-gray-950 font-bold py-4 rounded-xl text-lg hover:bg-yellow-300 transition disabled:opacity-50"
+            >
+              {loading ? "Creating..." : "Create Room"}
+            </button>
+            <button
+              onClick={() => { setMode("home"); setError(""); }}
+              className="text-gray-500 hover:text-gray-300 text-sm text-center"
+            >
+              Back
+            </button>
+          </div>
+        )}
+
+        {mode === "join" && (
+          <div className="flex flex-col gap-4">
+            <input
+              className="w-full bg-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              placeholder="Your nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              maxLength={20}
+            />
+            <input
+              className="w-full bg-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 uppercase tracking-widest text-center text-xl font-mono"
+              placeholder="ROOM CODE"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              maxLength={4}
+            />
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <button
+              onClick={handleJoin}
+              disabled={loading}
+              className="w-full bg-yellow-400 text-gray-950 font-bold py-4 rounded-xl text-lg hover:bg-yellow-300 transition disabled:opacity-50"
+            >
+              {loading ? "Joining..." : "Join Room"}
+            </button>
+            <button
+              onClick={() => { setMode("home"); setError(""); }}
+              className="text-gray-500 hover:text-gray-300 text-sm text-center"
+            >
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

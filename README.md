@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Name That Tune!
+
+A real-time multiplayer music guessing game. Players listen to a 30-second song preview and race to guess the title first. Points are awarded based on how quickly you guess — and wrong guesses cost you.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org/) (App Router, TypeScript) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) |
+| Real-time | [Pusher Channels](https://pusher.com/channels) |
+| Music | [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/) |
+| Hosting | [Vercel](https://vercel.com/) (planned) |
+
+No database — game state is held in server memory, making setup completely dependency-free beyond a Pusher account.
+
+---
+
+## Features
+
+- **Instant game rooms** — create a room and get a shareable 4-letter code; no accounts needed
+- **Cross-device multiplayer** — friends join from any browser using the room code
+- **Real-time sync** — all game events (players joining, song starts, guesses, scores) are broadcast live via Pusher WebSockets
+- **5 curated playlists** — 90s Hits, 2000s Pop, Classic Rock, Taylor Swift, Today's Hits
+- **iTunes previews** — 30-second audio clips fetched automatically, no API key required
+- **Time-based scoring** — 10 points for guessing in the first 3 seconds, dropping by 1 point every 3 seconds down to 1 point; wrong guesses cost 1 point
+- **Live color indicator** — the progress bar and point counter shift from green to yellow to red as the song plays
+- **Album art reveal** — the song's cover art is shown at full size when a round ends
+- **Auto-skip** — if nobody guesses, the song plays out and the round auto-advances
+- **Host controls** — the room creator starts the game and advances between rounds
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A free [Pusher Channels](https://pusher.com/) account
+
+### Setup
+
+```bash
+git clone https://github.com/YOUR_USERNAME/name-that-tune.git
+cd name-that-tune
+npm install
+```
+
+Create a `.env.local` file in the project root:
+
+```env
+PUSHER_APP_ID=your_app_id
+PUSHER_KEY=your_key
+PUSHER_SECRET=your_secret
+PUSHER_CLUSTER=your_cluster
+NEXT_PUBLIC_PUSHER_KEY=your_key
+NEXT_PUBLIC_PUSHER_CLUSTER=your_cluster
+```
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How to Play
 
-## Learn More
+1. One player creates a room and picks a playlist
+2. Share the 4-letter room code with friends
+3. Everyone joins from their own device
+4. Host hits **Start Game**
+5. A 30-second song clip plays automatically — type your guess and submit
+6. First correct title match wins the round and earns points
+7. After 10 rounds, the final scoreboard is shown
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Planned Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Player accounts and persistent stats
+- Invite links (no manual code entry)
+- Custom user-created playlists
+- Spotify integration
