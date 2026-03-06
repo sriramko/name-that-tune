@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { PLAYLISTS } from "@/lib/playlists";
 import AuthButton from "@/components/AuthButton";
 
@@ -82,9 +83,14 @@ export default function Home() {
                 unoptimized
               />
             )}
-            <span className="text-gray-300 text-sm">
-              Signed in as <span className="text-white font-semibold">{session.user.name}</span>
-            </span>
+            <div className="flex flex-col">
+              <span className="text-gray-300 text-sm">
+                Signed in as <span className="text-white font-semibold">{session.user.name}</span>
+              </span>
+              <Link href="/profile" className="text-yellow-400 text-xs hover:text-yellow-300 transition">
+                View my stats →
+              </Link>
+            </div>
           </div>
         )}
 
