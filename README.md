@@ -1,9 +1,6 @@
 # Name That Tune!
 
-Name That Tune Multiplayer is a real-time web game where players compete
-to identify songs as quickly as possible. The system uses a WebSocket
-server to synchronize gameplay between players and manages lobbies,
-round timers, and scoring logic on the backend.
+Name That Tune! is a real-time multiplayer web game where players race to identify songs from 30-second audio previews. Guess the title fast for more points, then try to name the artist for a bonus point.
 
 ---
 
@@ -15,24 +12,28 @@ round timers, and scoring logic on the backend.
 | Styling | [Tailwind CSS](https://tailwindcss.com/) |
 | Real-time | [Pusher Channels](https://pusher.com/channels) |
 | Music | [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/) |
-| Hosting | [Vercel](https://vercel.com/) (planned) |
-
-No database — game state is held in server memory, making setup completely dependency-free beyond a Pusher account.
+| Auth | [NextAuth.js v4](https://next-auth.js.org/) (GitHub OAuth) |
+| Database | [Prisma 5](https://www.prisma.io/) + SQLite |
+| Hosting | [Vercel](https://vercel.com/) |
 
 ---
 
 ## Features
 
-- **Instant game rooms** — create a room and get a shareable 4-letter code; no accounts needed
+- **Instant game rooms** — create a room and share the 4-letter code; no account required to join as a guest
+- **GitHub accounts** — sign in with GitHub to track your stats across sessions
 - **Cross-device multiplayer** — friends join from any browser using the room code
-- **Real-time sync** — all game events (players joining, song starts, guesses, scores) are broadcast live via Pusher WebSockets
+- **Real-time sync** — all game events (players joining, song starts, guesses, scores) broadcast live via Pusher WebSockets
 - **5 curated playlists** — 90s Hits, 2000s Pop, Classic Rock, Taylor Swift, Today's Hits
 - **iTunes previews** — 30-second audio clips fetched automatically, no API key required
-- **Time-based scoring** — 10 points for guessing in the first 3 seconds, dropping by 1 point every 3 seconds down to 1 point; wrong guesses cost 1 point
-- **Live color indicator** — the progress bar and point counter shift from green to yellow to red as the song plays
+- **Time-based scoring** — 10 points for an instant guess, dropping by 1 point every 3 seconds down to a minimum of 1; wrong guesses cost 1 point
+- **Artist bonus round** — after a correct title guess, the winner has 10 seconds to name the artist(s) for +1 bonus point
+- **Live color indicator** — progress bar and point counter shift from green to yellow to red as the song plays
 - **Album art reveal** — the song's cover art is shown at full size when a round ends
-- **Auto-skip** — if nobody guesses, the song plays out and the round auto-advances
+- **Auto-skip** — if nobody guesses, the clip plays out and the round auto-advances
 - **Host controls** — the room creator starts the game and advances between rounds
+- **Medal scoreboard** — final results show gold/silver/bronze medals with ranked standings
+- **Player stats** — signed-in users get a profile page with lifetime stats: games played, total points, win rate, best score, and a recent games history
 
 ---
 
@@ -42,6 +43,7 @@ No database — game state is held in server memory, making setup completely dep
 
 - Node.js 18+
 - A free [Pusher Channels](https://pusher.com/) account
+- A GitHub OAuth app (for account features)
 
 ### Setup
 
@@ -51,15 +53,33 @@ cd name-that-tune
 npm install
 ```
 
+Set up the database:
+
+```bash
+npx prisma migrate dev --name init
+```
+
 Create a `.env.local` file in the project root:
 
 ```env
+# Pusher
 PUSHER_APP_ID=your_app_id
 PUSHER_KEY=your_key
 PUSHER_SECRET=your_secret
 PUSHER_CLUSTER=your_cluster
 NEXT_PUBLIC_PUSHER_KEY=your_key
 NEXT_PUBLIC_PUSHER_CLUSTER=your_cluster
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_random_secret
+
+# GitHub OAuth (https://github.com/settings/developers)
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# Database
+DATABASE_URL="file:./dev.db"
 ```
 
 ```bash
@@ -72,19 +92,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## How to Play
 
-1. One player creates a room and picks a playlist
-2. Share the 4-letter room code with friends
-3. Everyone joins from their own device
-4. Host hits **Start Game**
-5. A 30-second song clip plays automatically — type your guess and submit
-6. First correct title match wins the round and earns points
-7. After 10 rounds, the final scoreboard is shown
+1. Sign in with GitHub (optional — guests can join with just a nickname)
+2. Create a room and pick a playlist, or join with a friend's room code
+3. Host hits **Start Game**
+4. A 30-second song clip plays automatically — type the title and submit
+5. First correct title guess wins the round points (faster = more points)
+6. The winner has 10 seconds to guess the artist for a bonus point
+7. Album art and the answer are revealed before the next round
+8. After 10 rounds, the final scoreboard shows medals and standings
 
 ---
 
 ## Planned Features
 
-- Player accounts and persistent stats
 - Invite links (no manual code entry)
 - Custom user-created playlists
 - Spotify integration
