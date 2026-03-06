@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { PLAYLISTS } from "@/lib/playlists";
 import AuthButton from "@/components/AuthButton";
+
+interface CustomPlaylist {
+  id: string;
+  name: string;
+  tracks: { id: string }[];
+}
 
 export default function Home() {
   const router = useRouter();
@@ -18,6 +24,15 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>([]);
+
+  // Load custom playlists when signed in and on create screen
+  useEffect(() => {
+    if (!session?.user || mode !== "create") return;
+    fetch("/api/playlist")
+      .then((r) => r.json())
+      .then((data) => setCustomPlaylists(data.playlists ?? []));
+  }, [session, mode]);
 
   async function handleCreate() {
     if (!session) return signIn("github");
@@ -36,7 +51,6 @@ export default function Home() {
 
   async function handleJoin() {
     if (!joinCode.trim()) return setError("Enter a room code");
-    // If not signed in, require a guest nickname
     if (!session && !guestNickname.trim()) return setError("Enter a nickname");
     setLoading(true);
     setError("");
@@ -139,8 +153,10 @@ export default function Home() {
                   )}
                   <span className="text-gray-300 text-sm">Playing as <span className="text-white font-semibold">{session.user.name}</span></span>
                 </div>
+
+                {/* Curated playlists */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-gray-400 text-sm">Choose a playlist</label>
+                  <label className="text-gray-400 text-sm">Curated playlists</label>
                   {PLAYLISTS.map((p) => (
                     <button
                       key={p.id}
@@ -156,6 +172,43 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+
+                {/* Custom playlists */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-gray-400 text-sm">Your playlists</label>
+                    <Link
+                      href="/playlist/create"
+                      className="text-yellow-400 text-xs hover:text-yellow-300 transition"
+                    >
+                      + Create new
+                    </Link>
+                  </div>
+                  {customPlaylists.length === 0 ? (
+                    <p className="text-gray-600 text-sm text-center py-3">
+                      No custom playlists yet —{" "}
+                      <Link href="/playlist/create" className="text-yellow-400 hover:text-yellow-300">
+                        create one
+                      </Link>
+                    </p>
+                  ) : (
+                    customPlaylists.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setPlaylistId(`custom:${p.id}`)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition ${
+                          playlistId === `custom:${p.id}`
+                            ? "border-yellow-400 bg-yellow-400/10 text-yellow-400"
+                            : "border-gray-700 bg-gray-800 text-white hover:border-gray-500"
+                        }`}
+                      >
+                        <span className="font-semibold">{p.name}</span>
+                        <span className="text-gray-400 text-sm ml-2">— {p.tracks.length} songs</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
                   onClick={handleCreate}

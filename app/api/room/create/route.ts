@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { createRoom, addPlayer } from "@/lib/rooms";
 import { buildPlaylistTracks } from "@/lib/itunes";
 import { PLAYLISTS } from "@/lib/playlists";
+import { prisma } from "@/lib/prisma";
+import { Track } from "@/types";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -14,11 +16,6 @@ export async function POST(req: NextRequest) {
   const { playlistId } = await req.json();
   if (!playlistId) {
     return NextResponse.json({ error: "Missing playlist" }, { status: 400 });
-  }
-
-  const playlist = PLAYLISTS.find((p) => p.id === playlistId);
-  if (!playlist) {
-    return NextResponse.json({ error: "Invalid playlist" }, { status: 400 });
   }
 
   const hostId = crypto.randomUUID();
@@ -32,9 +29,30 @@ export async function POST(req: NextRequest) {
     score: 0,
   });
 
-  buildPlaylistTracks(playlist.seeds).then((tracks) => {
-    room.tracks = tracks;
-  });
+  if (playlistId.startsWith("custom:")) {
+    const customId = playlistId.slice(7);
+    const customPlaylist = await prisma.customPlaylist.findFirst({
+      where: { id: customId, userId: session.user.id },
+      include: { tracks: { orderBy: { position: "asc" } } },
+    });
+    if (!customPlaylist) {
+      return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+    }
+    room.tracks = customPlaylist.tracks.map((t): Track => ({
+      title: t.title,
+      artist: t.artist,
+      previewUrl: t.previewUrl,
+      artworkUrl: t.artworkUrl ?? undefined,
+    }));
+  } else {
+    const playlist = PLAYLISTS.find((p) => p.id === playlistId);
+    if (!playlist) {
+      return NextResponse.json({ error: "Invalid playlist" }, { status: 400 });
+    }
+    buildPlaylistTracks(playlist.seeds).then((tracks) => {
+      room.tracks = tracks;
+    });
+  }
 
   return NextResponse.json({ code: room.code, playerId: hostId });
 }

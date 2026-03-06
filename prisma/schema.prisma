@@ -46,14 +46,35 @@ model VerificationToken {
 // ── Application models ────────────────────────────────────────────────────────
 
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  email         String?      @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  gamePlayers   GamePlayer[]
+  id              String           @id @default(cuid())
+  name            String?
+  email           String?          @unique
+  emailVerified   DateTime?
+  image           String?
+  accounts        Account[]
+  sessions        Session[]
+  gamePlayers     GamePlayer[]
+  customPlaylists CustomPlaylist[]
+}
+
+model CustomPlaylist {
+  id        String               @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime             @default(now())
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks    CustomPlaylistTrack[]
+}
+
+model CustomPlaylistTrack {
+  id               String         @id @default(cuid())
+  customPlaylistId String
+  title            String
+  artist           String
+  previewUrl       String
+  artworkUrl       String?
+  position         Int
+  playlist         CustomPlaylist @relation(fields: [customPlaylistId], references: [id], onDelete: Cascade)
 }
 
 model GameSession {

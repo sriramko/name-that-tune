@@ -4,6 +4,15 @@ import { pusherServer } from "@/lib/pusher";
 import { prisma } from "@/lib/prisma";
 import { PLAYLISTS } from "@/lib/playlists";
 
+async function resolvePlaylistName(playlistId: string): Promise<string> {
+  if (playlistId.startsWith("custom:")) {
+    const customId = playlistId.slice(7);
+    const p = await prisma.customPlaylist.findUnique({ where: { id: customId }, select: { name: true } });
+    return p?.name ?? "Custom Playlist";
+  }
+  return PLAYLISTS.find((p) => p.id === playlistId)?.name ?? playlistId;
+}
+
 export async function POST(req: NextRequest) {
   const { code, playerId } = await req.json();
 
@@ -12,14 +21,13 @@ export async function POST(req: NextRequest) {
   if (room.hostId !== playerId) return NextResponse.json({ error: "Not host" }, { status: 403 });
   if (room.tracks.length === 0) return NextResponse.json({ error: "Tracks not loaded yet" }, { status: 400 });
 
-  const playlist = PLAYLISTS.find((p) => p.id === room.playlistId);
+  const playlistName = await resolvePlaylistName(room.playlistId);
 
-  // Create a GameSession and GamePlayer records in the DB
   const gameSession = await prisma.gameSession.create({
     data: {
       roomCode: code,
       playlistId: room.playlistId,
-      playlistName: playlist?.name ?? room.playlistId,
+      playlistName,
       players: {
         create: room.players.map((p) => ({
           userId: p.userId ?? null,
