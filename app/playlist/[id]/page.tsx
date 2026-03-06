@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { PLAYLISTS } from "@/lib/playlists";
 import { prisma } from "@/lib/prisma";
 
@@ -10,6 +12,7 @@ interface Props {
 
 export default async function PlaylistPage({ params }: Props) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
 
   // Check curated playlists first
   const curated = PLAYLISTS.find((p) => p.id === id);
@@ -55,11 +58,13 @@ export default async function PlaylistPage({ params }: Props) {
     where: { id },
     include: {
       tracks: { orderBy: { position: "asc" } },
-      user: { select: { name: true, image: true } },
+      user: { select: { id: true, name: true, image: true } },
     },
   });
 
   if (!playlist) notFound();
+
+  const isOwner = session?.user?.id === playlist.user.id;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-6">
@@ -68,22 +73,32 @@ export default async function PlaylistPage({ params }: Props) {
           ← Back to Home
         </Link>
 
-        <div className="mb-6">
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Custom Playlist</p>
-          <h1 className="text-3xl font-black text-yellow-400">{playlist.name}</h1>
-          <div className="flex items-center gap-2 mt-2">
-            {playlist.user.image && (
-              <Image
-                src={playlist.user.image}
-                alt={playlist.user.name ?? ""}
-                width={20}
-                height={20}
-                className="rounded-full"
-                unoptimized
-              />
-            )}
-            <p className="text-gray-400 text-sm">by {playlist.user.name ?? "Unknown"}</p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Custom Playlist</p>
+            <h1 className="text-3xl font-black text-yellow-400">{playlist.name}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              {playlist.user.image && (
+                <Image
+                  src={playlist.user.image}
+                  alt={playlist.user.name ?? ""}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                  unoptimized
+                />
+              )}
+              <p className="text-gray-400 text-sm">by {playlist.user.name ?? "Unknown"}</p>
+            </div>
           </div>
+          {isOwner && (
+            <Link
+              href={`/playlist/${id}/edit`}
+              className="shrink-0 bg-gray-800 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition mt-1"
+            >
+              Edit
+            </Link>
+          )}
         </div>
 
         <div className="bg-gray-900 rounded-2xl overflow-hidden divide-y divide-gray-800">

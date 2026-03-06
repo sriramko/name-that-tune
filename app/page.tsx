@@ -122,9 +122,16 @@ export default function Home() {
             >
               Join a Room
             </button>
-            {!session && (
+            {session ? (
+              <Link
+                href="/playlist/create"
+                className="w-full bg-gray-900 border border-gray-700 text-gray-300 font-semibold py-3 rounded-xl text-base hover:border-gray-500 hover:text-white transition text-center"
+              >
+                Create a Playlist
+              </Link>
+            ) : (
               <p className="text-center text-gray-600 text-xs mt-2">
-                Sign in with GitHub to create rooms and track your stats
+                Sign in with GitHub to create rooms, build playlists, and track your stats
               </p>
             )}
           </div>
