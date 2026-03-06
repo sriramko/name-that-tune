@@ -5,11 +5,11 @@ import { PLAYLISTS } from "@/lib/playlists";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PlaylistPage({ params }: Props) {
-  const { id } = params;
+  const { id } = await params;
 
   // Check curated playlists first
   const curated = PLAYLISTS.find((p) => p.id === id);
