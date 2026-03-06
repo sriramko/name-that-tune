@@ -1,6 +1,9 @@
 # Name That Tune!
 
-A real-time multiplayer music guessing game. Players listen to a 30-second song preview and race to guess the title first. Points are awarded based on how quickly you guess — and wrong guesses cost you.
+Name That Tune Multiplayer is a real-time web game where players compete
+to identify songs as quickly as possible. The system uses a WebSocket
+server to synchronize gameplay between players and manages lobbies,
+round timers, and scoring logic on the backend.
 
 ---
 
