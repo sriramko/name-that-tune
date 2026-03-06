@@ -35,11 +35,11 @@ export default function RoomPage() {
   // Keep isHostRef in sync so callbacks always have the latest value
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
 
-  // Load player identity from sessionStorage
+  // Load player identity from sessionStorage — only playerId is required
+  // (nickname comes from the account or was set on join for guests)
   useEffect(() => {
     const pid = sessionStorage.getItem("playerId") ?? "";
-    const nick = sessionStorage.getItem("nickname") ?? "";
-    if (!pid || !nick) { router.push("/"); return; }
+    if (!pid) { router.push("/"); return; }
     setPlayerId(pid);
   }, [router]);
 
