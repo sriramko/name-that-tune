@@ -20,7 +20,9 @@ export interface Room {
   playlistId: string;
   tracks: Track[];
   currentTrackIndex: number;
-  phase: "lobby" | "playing" | "reveal" | "finished";
+  phase: "lobby" | "playing" | "artist-bonus" | "reveal" | "finished";
   roundWinner: string | null;
+  titlePoints: number | null;
+  artistGuesserPlayerId: string | null;
   gameSessionId?: string;
 }

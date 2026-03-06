@@ -8,8 +8,9 @@ import { Room, Player, Track } from "@/types";
 import Scoreboard from "@/components/Scoreboard";
 import AudioPlayer from "@/components/AudioPlayer";
 import GuessInput from "@/components/GuessInput";
+import ArtistBonusInput from "@/components/ArtistBonusInput";
 
-type Phase = "lobby" | "playing" | "reveal" | "finished";
+type Phase = "lobby" | "playing" | "artist-bonus" | "reveal" | "finished";
 
 export default function RoomPage() {
   const { code } = useParams<{ code: string }>();
@@ -22,21 +23,31 @@ export default function RoomPage() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [trackIndex, setTrackIndex] = useState(0);
   const [totalTracks, setTotalTracks] = useState(0);
+
+  // Title round state
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [roundPoints, setRoundPoints] = useState<number | null>(null);
-  const [revealedTrack, setRevealedTrack] = useState<Track | null>(null);
   const [skipped, setSkipped] = useState(false);
   const [guessResult, setGuessResult] = useState<"correct" | "wrong" | null>(null);
-  const [starting, setStarting] = useState(false);
 
+  // Artist bonus state
+  const [artistGuesserPlayerId, setArtistGuesserPlayerId] = useState<string | null>(null);
+  const [artistGuesserNickname, setArtistGuesserNickname] = useState<string | null>(null);
+  const [artistGuessResult, setArtistGuessResult] = useState<"correct" | "wrong" | null>(null);
+  const [artistBonusWinner, setArtistBonusWinner] = useState<string | null>(null);
+
+  // Reveal state
+  const [revealedTrack, setRevealedTrack] = useState<Track | null>(null);
+
+  const [starting, setStarting] = useState(false);
   const currentTimeRef = useRef(0);
   const isHostRef = useRef(false);
+  const playerIdRef = useRef("");
 
-  // Keep isHostRef in sync so callbacks always have the latest value
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
+  useEffect(() => { playerIdRef.current = playerId; }, [playerId]);
 
-  // Load player identity from sessionStorage — only playerId is required
-  // (nickname comes from the account or was set on join for guests)
+  // Load player identity
   useEffect(() => {
     const pid = sessionStorage.getItem("playerId") ?? "";
     if (!pid) { router.push("/"); return; }
@@ -56,13 +67,20 @@ export default function RoomPage() {
       });
   }, [code, playerId]);
 
-  // Called by AudioPlayer when the clip ends — host auto-skips
   const handleAudioEnded = useCallback(() => {
     if (!isHostRef.current) return;
     fetch("/api/game/skip", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, playerId: sessionStorage.getItem("playerId") }),
+    });
+  }, [code]);
+
+  const handleArtistTimeout = useCallback(() => {
+    fetch("/api/game/artist-timeout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, playerId: playerIdRef.current }),
     });
   }, [code]);
 
@@ -86,15 +104,36 @@ export default function RoomPage() {
       setRevealedTrack(null);
       setSkipped(false);
       setGuessResult(null);
+      setArtistGuesserPlayerId(null);
+      setArtistBonusWinner(null);
     });
 
-    channel.bind("round-won", (data: { winner: string; points: number; track: Track; players: Player[] }) => {
+    channel.bind("artist-bonus-start", (data: {
+      guesserPlayerId: string;
+      guesserNickname: string;
+      titlePoints: number;
+      players: Player[];
+    }) => {
+      setPhase("artist-bonus");
+      setArtistGuesserPlayerId(data.guesserPlayerId);
+      setArtistGuesserNickname(data.guesserNickname);
+      setRoundWinner(data.guesserNickname);
+      setRoundPoints(data.titlePoints);
+      setPlayers(data.players);
+      setArtistGuessResult(null);
+      setArtistBonusWinner(null);
+    });
+
+    channel.bind("artist-bonus-result", (data: {
+      correct: boolean;
+      bonusWinner: string | null;
+      track: Track;
+      players: Player[];
+    }) => {
       setPhase("reveal");
-      setRoundWinner(data.winner);
-      setRoundPoints(data.points);
+      setArtistBonusWinner(data.bonusWinner);
       setRevealedTrack(data.track);
       setPlayers(data.players);
-      setSkipped(false);
     });
 
     channel.bind("round-skipped", (data: { track: Track; players: Player[] }) => {
@@ -104,6 +143,7 @@ export default function RoomPage() {
       setRevealedTrack(data.track);
       setPlayers(data.players);
       setSkipped(true);
+      setArtistBonusWinner(null);
     });
 
     channel.bind("scores-updated", (data: { players: Player[] }) => {
@@ -119,6 +159,8 @@ export default function RoomPage() {
       setRevealedTrack(null);
       setSkipped(false);
       setGuessResult(null);
+      setArtistGuesserPlayerId(null);
+      setArtistBonusWinner(null);
     });
 
     channel.bind("game-finished", (data: { players: Player[] }) => {
@@ -153,6 +195,19 @@ export default function RoomPage() {
     if (!data.correct) setTimeout(() => setGuessResult(null), 800);
   }
 
+  async function handleArtistGuess(guess: string) {
+    const res = await fetch("/api/game/artist-guess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, playerId, guess }),
+    });
+    const data = await res.json();
+    if (!data.correct) {
+      setArtistGuessResult("wrong");
+      setTimeout(() => setArtistGuessResult(null), 800);
+    }
+  }
+
   async function handleNextRound() {
     await fetch("/api/game/next", {
       method: "POST",
@@ -160,6 +215,8 @@ export default function RoomPage() {
       body: JSON.stringify({ code, playerId }),
     });
   }
+
+  const isArtistGuesser = playerId === artistGuesserPlayerId;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center p-6">
@@ -235,6 +292,36 @@ export default function RoomPage() {
           </div>
         )}
 
+        {/* Artist Bonus */}
+        {phase === "artist-bonus" && (
+          <div className="flex flex-col gap-6">
+            <div className="bg-gray-900 rounded-2xl p-5 text-center">
+              <p className="text-green-400 font-bold text-lg">
+                {roundWinner} named the tune!
+                {roundPoints !== null && (
+                  <span className="text-yellow-400"> +{roundPoints} pts</span>
+                )}
+              </p>
+            </div>
+
+            {isArtistGuesser ? (
+              <ArtistBonusInput
+                onGuess={handleArtistGuess}
+                onTimeout={handleArtistTimeout}
+                result={artistGuessResult}
+              />
+            ) : (
+              <div className="bg-gray-900 rounded-2xl p-5 text-center">
+                <p className="text-gray-300 text-sm">
+                  <span className="font-semibold text-white">{artistGuesserNickname}</span> is guessing the artist...
+                </p>
+              </div>
+            )}
+
+            <Scoreboard players={players} currentPlayerId={playerId} />
+          </div>
+        )}
+
         {/* Reveal */}
         {phase === "reveal" && revealedTrack && (
           <div className="flex flex-col gap-6">
@@ -250,19 +337,25 @@ export default function RoomPage() {
                   />
                 </div>
               )}
-              <div className="p-6 text-center">
+              <div className="p-5 flex flex-col gap-1 text-center">
                 {skipped ? (
-                  <p className="text-gray-400 font-bold text-lg mb-1">Nobody got it!</p>
+                  <p className="text-gray-400 font-bold">Nobody got it!</p>
                 ) : (
-                  <p className="text-green-400 font-bold text-lg mb-1">
-                    {roundWinner} got it
-                    {roundPoints !== null && (
-                      <span className="text-yellow-400"> +{roundPoints} pts</span>
+                  <>
+                    <p className="text-green-400 font-semibold text-sm">
+                      {roundWinner} named the tune
+                      {roundPoints !== null && <span className="text-yellow-400"> +{roundPoints} pts</span>}
+                    </p>
+                    {artistBonusWinner ? (
+                      <p className="text-blue-400 font-semibold text-sm">
+                        {artistBonusWinner} got the artist <span className="text-yellow-400">+1 pt</span>
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Nobody got the artist</p>
                     )}
-                    !
-                  </p>
+                  </>
                 )}
-                <p className="text-white text-2xl font-black">{revealedTrack.title}</p>
+                <p className="text-white text-2xl font-black mt-2">{revealedTrack.title}</p>
                 <p className="text-gray-400">{revealedTrack.artist}</p>
               </div>
             </div>

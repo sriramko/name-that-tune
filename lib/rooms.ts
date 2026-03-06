@@ -25,6 +25,8 @@ export function createRoom(hostId: string, playlistId: string): Room {
     currentTrackIndex: 0,
     phase: "lobby",
     roundWinner: null,
+    titlePoints: null,
+    artistGuesserPlayerId: null,
   };
 
   rooms.set(code, room);

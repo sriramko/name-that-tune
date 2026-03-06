@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const room = getRoom(code);
   if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
   if (room.phase !== "playing") return NextResponse.json({ correct: false });
-  if (room.roundWinner) return NextResponse.json({ correct: false }); // already won
+  if (room.roundWinner) return NextResponse.json({ correct: false });
 
   const track = room.tracks[room.currentTrackIndex];
   if (!track) return NextResponse.json({ correct: false });
@@ -34,12 +34,18 @@ export async function POST(req: NextRequest) {
     const points = calculatePoints(timeElapsed ?? 30);
     if (player) player.score += points;
 
-    updateRoom(code, { phase: "reveal", roundWinner: player?.nickname ?? "Someone" });
+    // Transition to artist-bonus instead of reveal
+    updateRoom(code, {
+      phase: "artist-bonus",
+      roundWinner: player?.nickname ?? "Someone",
+      titlePoints: points,
+      artistGuesserPlayerId: playerId,
+    });
 
-    await pusherServer.trigger(`room-${code}`, "round-won", {
-      winner: player?.nickname,
-      points,
-      track,
+    await pusherServer.trigger(`room-${code}`, "artist-bonus-start", {
+      guesserPlayerId: playerId,
+      guesserNickname: player?.nickname ?? "Someone",
+      titlePoints: points,
       players: room.players,
     });
 
